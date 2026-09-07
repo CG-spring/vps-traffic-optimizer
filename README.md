@@ -1,100 +1,108 @@
-# VPS Traffic Optimizer Guide
+# VPS 流量优化与节省指南
 
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-blue.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/CG-spring/vps-traffic-optimizer?style=flat-square)](https://github.com/CG-spring/vps-traffic-optimizer/stargazers)
 
-> Complete guide for VPS traffic monitoring, optimization and cost saving. From zero to hero.
+> 完整的 VPS 流量监控、优化与省钱指南——从零到精通
 
-**English** | [Chinese](README_ZH.md)
-
----
-
-## Table of Contents
-
-- [Why Traffic Optimization](#why-traffic-optimization)
-- [Traffic Monitoring Tools](#traffic-monitoring-tools)
-- [Traffic Saving Techniques](#traffic-saving-techniques)
-- [CDN Acceleration](#cdn-acceleration)
-- [Automated Scripts](#automated-scripts)
-- [Cost Analysis](#cost-analysis)
+**中文** | **[English](README_EN.md)**
 
 ---
 
-## Why Traffic Optimization
+## 目录
 
-### Traffic Cost Analysis
+- [为什么要做流量优化](#为什么要做流量优化)
+- [流量监控工具](#流量监控工具)
+- [流量节省技巧](#流量节省技巧)
+- [CDN 加速](#cdn-加速)
+- [自动化脚本](#自动化脚本)
+- [成本分析](#成本分析)
+- [相关资源](#相关资源)
+- [许可证](#许可证)
 
-| Provider | Bandwidth | Overage | Rec |
-|----------|-----------|---------|-----|
-| Vultr | 500GB-2TB | $0.01/GB | 4/5 |
-| DigitalOcean | 1TB-2TB | $0.01/GB | 4/5 |
-| BandwagonHost | 500GB-1TB | Shutdown | 3/5 |
-| Linode | 1TB-4TB | $0.02/GB | 4/5 |
+---
 
-### Traffic Breakdown
+## 为什么要做流量优化
+
+很多 VPS 套餐按流量计费或超出套餐后高额扣费，流量优化能直接省钱、避免被关机。
+
+### 流量成本对比
+
+| 服务商 | 带宽/流量 | 超出计费 | 推荐 |
+|--------|-----------|----------|------|
+| Vultr | 500GB–2TB | $0.01/GB | 4/5 |
+| DigitalOcean | 1TB–2TB | $0.01/GB | 4/5 |
+| BandwagonHost | 500GB–1TB | 直接关机 | 3/5 |
+| Linode | 1TB–4TB | $0.02/GB | 4/5 |
+
+### 流量构成拆解
 
 ```
-Website (Nginx)     40%
-Database Sync       20%
-Backup Transfer     15%
-Proxy Service       15%
-System Updates      10%
+网站（Nginx）      40%
+数据库同步          20%
+备份传输            15%
+代理服务            15%
+系统更新            10%
 ```
+
+> 找准「流量大户」才能对症下药：通常网站静态资源与备份传输是优化重点。
 
 ---
 
-## Traffic Monitoring Tools
+## 流量监控工具
 
-### 1. vnStat - Lightweight Stats
+不做监控就无从优化。下面三款工具覆盖「总量 / 进程 / 连接」三个层面。
+
+### 1. vnStat —— 轻量统计
 
 ```bash
-# Install
+# 安装
 apt install vnstat -y
 
-# Initialize database
+# 初始化数据库
 vnstat --add -i eth0
 
-# Start service
+# 启动服务
 systemctl enable vnstat
 systemctl start vnstat
 
-# Real-time monitoring
+# 实时监测
 vnstat -l
 
-# Monthly stats
+# 月度统计
 vnstat -m
 
-# Daily stats
+# 每日统计
 vnstat -d
 ```
 
-### 2. nethogs - Per-Process Monitor
+### 2. nethogs —— 按进程统计
 
 ```bash
-# Install
+# 安装
 apt install nethogs -y
 
-# Monitor by interface
+# 按网卡监测
 nethogs eth0
 
-# Monitor specific process
+# 指定进程
 nethogs -p eth0
 ```
 
-### 3. iftop - Real-time Connection
+### 3. iftop —— 实时连接
 
 ```bash
-# Install
+# 安装
 apt install iftop -y
 
-# Monitor connections
+# 监测连接
 iftop -i eth0
 
-# Show ports
+# 显示端口
 iftop -P -i eth0
 ```
 
-### 4. bmon - Bandwidth Monitor
+### 4. bmon —— 带宽监测
 
 ```bash
 apt install bmon -y
@@ -103,9 +111,9 @@ bmon
 
 ---
 
-## Traffic Saving Techniques
+## 流量节省技巧
 
-### 1. Enable Gzip Compression
+### 1. 开启 Gzip 压缩
 
 ```nginx
 # /etc/nginx/nginx.conf
@@ -118,68 +126,68 @@ gzip_types text/plain text/css text/xml text/javascript
     application/x-javascript;
 gzip_disable "MSIE [1-6]\.";
 
-# Savings: 60-70% on text content
+# 效果：文本内容可节省 60–70%
 ```
 
-### 2. Browser Caching
+### 2. 浏览器缓存
 
 ```nginx
-# Static resources - 30 day cache
+# 静态资源缓存 30 天
 location ~* \.(jpg|jpeg|png|gif|ico|css|js|woff2|svg)$ {
     expires 30d;
     add_header Cache-Control "public, immutable";
 }
 
-# HTML - no cache
+# HTML 不缓存
 location ~* \.html$ {
     expires -1;
     add_header Cache-Control "no-store, no-cache";
 }
 ```
 
-### 3. Image Optimization
+### 3. 图片优化
 
 ```bash
-# Install ImageMagick
+# 安装 ImageMagick
 apt install imagemagick -y
 
-# Compress all images in /var/www
+# 压缩网站全部图片
 find /var/www -type f -name "*.jpg" -exec convert {} -quality 85 {} \;
 find /var/www -type f -name "*.png" -exec convert {} -quality 85 {} \;
 ```
 
-### 4. Database Optimization
+### 4. 数据库优化
 
 ```sql
--- Enable slow query log
+-- 开启慢查询日志
 SET GLOBAL slow_query_log = 1;
 SET GLOBAL long_query_time = 2;
 
--- Clean binary logs
+-- 清理二进制日志
 PURGE BINARY LOGS BEFORE DATE_SUB(NOW(), INTERVAL 7 DAY);
 
--- Optimize tables
+-- 优化表
 OPTIMIZE TABLE your_table;
 ```
 
-### 5. Incremental Backup with rsync
+### 5. rsync 增量备份
 
 ```bash
 #!/bin/bash
-# Backup script - saves 80% bandwidth
+# 备份脚本——可节省约 80% 带宽
 BACKUP_DIR="/backup"
 SOURCE_DIR="/var/www"
 
 rsync -avz --delete --link-dest=$BACKUP_DIR/latest \
     $SOURCE_DIR/ $BACKUP_DIR/$(date +%Y%m%d)
 
-# Keep only last 7 days
+# 仅保留最近 7 天
 find $BACKUP_DIR -type d -mtime +7 -exec rm -rf {} \;
 
-# Savings: 80% vs full backup every time
+# 相比每次全量备份，节省约 80% 流量
 ```
 
-### 6. Log Rotation
+### 6. 日志轮转
 
 ```bash
 # /etc/logrotate.d/nginx
@@ -198,144 +206,138 @@ find $BACKUP_DIR -type d -mtime +7 -exec rm -rf {} \;
 
 ---
 
-## CDN Acceleration
+## CDN 加速
 
-### Cloudflare Free Plan
+把静态资源交给 CDN 边缘节点，源站流量可大幅下降。
+
+### Cloudflare 免费版
 
 ```
-Setup Steps:
-1. Register at cloudflare.com
-2. Add your domain
-3. Update nameservers
-4. Enable proxy (orange cloud)
-5. Set SSL/TLS to Full
+配置步骤：
+1. 在 cloudflare.com 注册
+2. 添加你的域名
+3. 更新 NS 解析
+4. 开启代理（橙色云朵）
+5. 将 SSL/TLS 设为 Full
 
-Benefits:
-- Static assets: 70-90% traffic savings
-- Global acceleration
-- Free DDoS protection
-- HTTP/2 support
+收益：
+- 静态资源：节省 70–90% 流量
+- 全球加速
+- 免费 DDoS 防护
+- 支持 HTTP/2
 ```
 
 ### Cloudflare Page Rules
 
 ```yaml
-Rule 1: *example.com/*
-  Cache Level: Cache Everything
-  Edge Cache TTL: 1 month
-  Browser Cache TTL: 1 year
+规则 1：*example.com/*
+  缓存级别：Cache Everything
+  边缘缓存 TTL：1 个月
+  浏览器缓存 TTL：1 年
 
-Rule 2: *example.com/api/*
-  Cache Level: Bypass
+规则 2：*example.com/api/*
+  缓存级别：Bypass
 
-Rule 3: *example.com/*.jpg
-  Cache Level: Cache Everything
-  Edge Cache TTL: 1 week
+规则 3：*example.com/*.jpg
+  缓存级别：Cache Everything
+  边缘缓存 TTL：1 周
 ```
 
-### Other CDN Options
+### 其他 CDN 选项
 
-| CDN | Free Tier | China PoP | Best For |
-|-----|-----------|-----------|---------|
-| Cloudflare | Unlimited | No | International |
-| jsDelivr | 50GB/mo | Yes | Open source |
-| BunnyCDN | 100GB/mo | Optional | General use |
+| CDN | 免费额度 | 国内节点 | 适合 |
+|-----|----------|----------|------|
+| Cloudflare | 不限量 | 无 | 国际站点 |
+| jsDelivr | 50GB/月 | 有 | 开源项目 |
+| BunnyCDN | 100GB/月 | 可选 | 通用 |
 
 ---
 
-## Automated Scripts
+## 自动化脚本
 
-### Traffic Alert Script
+### 流量告警脚本
 
 ```bash
 #!/bin/bash
-# traffic-alert.sh
-# Requires: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+# traffic-alert.sh（需配置 TELEGRAM_BOT_TOKEN 与 TELEGRAM_CHAT_ID）
 
 BOT_TOKEN="your_bot_token"
 CHAT_ID="your_chat_id"
 MONTHLY_LIMIT=500  # GB
 
-# Get monthly traffic (GB)
 used=$(vnstat -m | grep "$(date +%b '%y)" | awk '{print $4}' | sed 's/GiB//')
 
 if (( $(echo "$used > $MONTHLY_LIMIT * 0.8" | bc -l) )); then
     pct=$(echo "scale=1; $used/$MONTHLY_LIMIT*100" | bc -l)
-    msg="Traffic Alert%0AUsed: ${used}GB%0ALimit: ${MONTHLY_LIMIT}GB%0AUsage: ${pct}%%"
+    msg="流量提醒%0A已用: ${used}GB%0A限额: ${MONTHLY_LIMIT}GB%0A使用率: ${pct}%%"
     curl -s "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${msg}"
 fi
 ```
 
-### Daily Traffic Report
+### 每日流量报告
 
 ```bash
 #!/bin/bash
 # traffic-report.sh
 
-echo "=== Daily Traffic Report ==="
-echo ""
-echo "Today:"
-vnstat -d | grep "$(date +%Y-%m-%d)" | awk '{print "  Download: "$2" "$3"\n  Upload: "$5" "$6"\n  Total: "$8" "$9}'
-echo ""
-echo "This month:"
-vnstat -m | grep "$(date +%b '%y)" | awk '{print "  Download: "$2" "$3"\n  Upload: "$5" "$6"\n  Total: "$8" "$9}'
-echo ""
-echo "Top 10 connections:"
+echo "=== 每日流量报告 ==="
+echo "今日:"
+vnstat -d | grep "$(date +%Y-%m-%d)" | awk '{print "  下载: "$2" "$3"\n  上传: "$5" "$6"\n  合计: "$8" "$9}'
+echo "本月:"
+vnstat -m | grep "$(date +%b '%y)" | awk '{print "  下载: "$2" "$3"\n  上传: "$5" "$6"\n  合计: "$8" "$9}'
+echo "Top 10 连接:"
 netstat -an | grep ESTABLISHED | awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -nr | head -10
-
-# Send via email
-echo "$report" | mail -s "VPS Traffic Report $(date +%Y-%m-%d)" admin@example.com
 ```
 
-### Cron Jobs
+### 定时任务
 
 ```bash
-# Add to crontab -e
-0 */6 * * * /root/traffic-alert.sh    # Check every 6 hours
-0 8 * * * /root/traffic-report.sh      # Daily report at 8am
-*/5 * * * * /root/traffic-monitor.sh  # Monitor every 5 minutes
+# crontab -e
+0 */6 * * * /root/traffic-alert.sh    # 每 6 小时检查
+0 8 * * * /root/traffic-report.sh      # 每天 8 点报告
+*/5 * * * * /root/traffic-monitor.sh  # 每 5 分钟监测
 ```
 
 ---
 
-## Cost Analysis
+## 成本分析
 
-### Monthly Cost Calculator
-
-```
-Formula: (Base Cost + Bandwidth Overage) / Total Traffic
-
-Example:
-- Plan: $5/month, 500GB included
-- Actual usage: 600GB
-- Overage: 100GB x $0.01 = $1
-- Total: $6
-- Cost per GB: $6 / 600GB = $0.01/GB
-```
-
-### Traffic Estimation Formula
+### 月度成本计算器
 
 ```
-Monthly Traffic = Daily UV x Page Size x Pages Per Visit x 30 days
+公式：（基础费用 + 超出流量费）/ 总流量
 
-Example:
-- Daily UV: 1000
-- Page Size: 500KB (with gzip)
-- Pages Per Visit: 3
-- Monthly: 1000 x 0.5MB x 3 x 30 = 45GB
+示例：
+- 套餐：$5/月，含 500GB
+- 实际用量：600GB
+- 超出：100GB × $0.01 = $1
+- 合计：$6
+- 单 GB 成本：$6 / 600GB = $0.01/GB
+```
+
+### 流量估算公式
+
+```
+月流量 = 日均 UV × 页面大小 × 每次访问页数 × 30 天
+
+示例：
+- 日均 UV：1000
+- 页面大小：500KB（已开启 gzip）
+- 每次访问页数：3
+- 月流量：1000 × 0.5MB × 3 × 30 = 45GB
 ```
 
 ---
 
-## Related Resources
+## 相关资源
 
-- [VPS Reviews](https://vpsvip.net) - VPS provider comparisons
-- [Clash Tutorial](https://clash-for-windows.net) - Proxy client guide
-- [Airport Navigation](https://nav.clashvip.net) - VPN service recommendations
-- [Community Forum](https://bbs.clashhub.net) - Technical discussions
+- [VPS 测评](https://vpsvip.net) - VPS 服务商对比
+- [Clash 教程](https://clash-for-windows.net) - 代理客户端指南
+- [机场导航](https://nav.clashvip.net) - VPN 节点推荐
+- [社区论坛](https://bbs.clashhub.net) - 技术讨论
 
 ---
 
-## License
+## 许可证
 
-CC BY-NC-SA 4.0 - Educational use only, no commercial use
+CC BY-NC-SA 4.0 - 仅限教育用途，禁止商用
